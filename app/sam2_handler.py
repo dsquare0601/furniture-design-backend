@@ -3,7 +3,7 @@ import sys
 import torch
 import numpy as np
 from PIL import Image
-from .config import SAM2_DIR, CHECKPOINT_PATH, MODEL_CFG
+from .config import SAM2_DIR, CHECKPOINT_PATH, MODEL_CFG, SAM2_POINTS_PER_SIDE, SAM2_PRED_IOU_THRESH, SAM2_STABILITY_SCORE_THRESH, SAM2_CROP_N_LAYERS, SAM2_CROP_N_POINTS_DOWNSCALE, SAM2_MIN_MASK_REGION_AREA
 
 # Add SAM2 to Python path
 sys.path.insert(0, SAM2_DIR)
@@ -26,12 +26,12 @@ try:
     # Use automatic mask generator for multiple objects
     mask_generator = SAM2AutomaticMaskGenerator(
         model=sam2_model,
-        points_per_side=32,
-        pred_iou_thresh=0.8,
-        stability_score_thresh=0.8,
-        crop_n_layers=1,
-        crop_n_points_downscale_factor=2,
-        min_mask_region_area=500,  # Filter out small regions
+        points_per_side=SAM2_POINTS_PER_SIDE,
+        pred_iou_thresh=SAM2_PRED_IOU_THRESH,
+        stability_score_thresh=SAM2_STABILITY_SCORE_THRESH,
+        crop_n_layers=SAM2_CROP_N_LAYERS,
+        crop_n_points_downscale_factor=SAM2_CROP_N_POINTS_DOWNSCALE,
+        min_mask_region_area=SAM2_MIN_MASK_REGION_AREA,  # Filter out small regions
     )
     
     print(f"✅ SAM2 loaded successfully on {device}")

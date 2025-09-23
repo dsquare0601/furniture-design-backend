@@ -21,6 +21,14 @@ if MODEL_SIZE == "base_plus":
     CHECKPOINT_PATH = os.path.join(SAM2_DIR, "checkpoints", "sam2.1_hiera_b+.pt")
     MODEL_CFG = "configs/sam2.1/sam2.1_hiera_b+.yaml"
 
+# SAM2 Mask Generator Parameters
+SAM2_POINTS_PER_SIDE = int(os.getenv("SAM2_POINTS_PER_SIDE", "32"))
+SAM2_PRED_IOU_THRESH = float(os.getenv("SAM2_PRED_IOU_THRESH", "0.8"))
+SAM2_STABILITY_SCORE_THRESH = float(os.getenv("SAM2_STABILITY_SCORE_THRESH", "0.8"))
+SAM2_CROP_N_LAYERS = int(os.getenv("SAM2_CROP_N_LAYERS", "1"))
+SAM2_CROP_N_POINTS_DOWNSCALE = int(os.getenv("SAM2_CROP_N_POINTS_DOWNSCALE", "2"))
+SAM2_MIN_MASK_REGION_AREA = int(os.getenv("SAM2_MIN_MASK_REGION_AREA", "500"))
+
 # Application settings
 TEMP_DIR = os.path.join(BASE_DIR, "temp")
 HOST = os.getenv("HOST", "0.0.0.0")
