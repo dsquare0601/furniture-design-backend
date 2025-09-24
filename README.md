@@ -4,39 +4,104 @@ A FastAPI backend service that uses SAM2 (Segment Anything Model 2) to segment f
 
 ## Features
 
-- 🎯 **Multi-part Segmentation**: Automatically detects and segments different furniture components (doors, handles, panels, etc.)
-- 🎨 **Color Customization Ready**: Generates separate masks for each furniture part
-- ⚡ **Fast Processing**: CUDA-accelerated SAM2 model
-- 🚀 **REST API**: Simple HTTP endpoints for easy integration
-- 📱 **Mobile Ready**: Designed for Flutter mobile app integration
+- � **Multiple Segmentation Strategies:**
+  - **Color-Based**: Fast clustering for simple furniture (primary method)
+  - **SAM2 Automatic**: Detailed AI-powered segmentation (fallback)
+  - **SAM2 Interactive**: Precise user-guided segmentation (precision control)
+- 🎯 **Smart Fallback System**: Automatically tries better methods if primary fails
+- ⚡ **CUDA Acceleration**: GPU-powered processing for fast results
+- 🚀 **REST API**: Clean HTTP endpoints with detailed responses
+- 📱 **Mobile App Ready**: Designed for furniture customization apps
+- 🔧 **Configurable**: Environment-based settings for all parameters
 
 ## API Endpoints
 
-### POST `/segment`
-Upload a furniture image and get multiple mask files for different parts.
+### POST `/segment` (Legacy)
+Upload a furniture image and get masks using color-based segmentation.
 
 **Request:**
 - Multipart form data with `file` field
 - Supported formats: PNG, JPG, JPEG
 
+### POST `/segment/color`
+**Color-Based Segmentation** - Fast and reliable for most furniture images.
+
+- **Best for:** Clear furniture with distinct color regions
+- **Method:** K-means clustering in LAB color space
+- **Speed:** Fast (seconds)
+- **Accuracy:** Good for simple furniture
+
+**Request:**
+```bash
+curl -X POST "http://localhost:8000/segment/color" \
+  -F "file=@sofa.jpg"
+```
+
 **Response:**
 ```json
 {
     "success": true,
-    "message": "Generated 6 furniture part masks",
+    "strategy": "color-based",
+    "description": "K-means clustering in LAB color space",
+    "message": "Generated 3 color region masks",
     "masks": [
         {
             "id": 1,
-            "filename": "furniture_mask_1.png",
-            "path": "/path/to/mask",
-            "download_url": "/download/furniture_mask_1.png"
+            "filename": "sofa_color_1_mask.png",
+            "download_url": "/download/sofa_color_1_mask.png"
         }
     ]
 }
 ```
 
+### POST `/segment/sam2-auto`
+**SAM2 Automatic Segmentation** - Detailed segmentation for complex furniture.
+
+- **Best for:** Irregular shapes, detailed furniture parts
+- **Method:** SAM2 automatic mask generation
+- **Speed:** Slower (10-30 seconds)
+- **Accuracy:** High, with stability scoring
+
+**Request:**
+```bash
+curl -X POST "http://localhost:8000/segment/sam2-auto" \
+  -F "file=@wardrobe.jpg"
+```
+
+### POST `/segment/sam2-interactive`
+**SAM2 Interactive Segmentation** - Precise control with user prompts.
+
+- **Best for:** When you need exact control over specific parts
+- **Method:** User-guided point and box prompts
+- **Speed:** Fast (5-15 seconds)
+- **Accuracy:** Highest precision
+
+**Request:**
+```json
+{
+  "points": [[500, 800], [200, 400]],
+  "labels": [1, 1]
+}
+```
+
+```bash
+curl -X POST "http://localhost:8000/segment/sam2-interactive" \
+  -F "file=@sofa.jpg" \
+  -H "Content-Type: application/json" \
+  -d '{"points": [[500, 800]], "labels": [1]}'
+```
+
+**Prompt Types:**
+- `points`: `[[x,y], [x,y]]` - Click coordinates
+- `boxes`: `[[x1,y1,x2,y2]]` - Drag rectangles
+- `labels`: `[1, 0, 1]` - 1=foreground, 0=background
+
 ### GET `/download/{filename}`
 Download a specific mask file.
+
+```bash
+curl -o mask.png "http://localhost:8000/download/sofa_color_1_mask.png"
+```
 
 ## Setup
 

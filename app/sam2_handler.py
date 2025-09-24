@@ -40,9 +40,9 @@ try:
 finally:
     os.chdir(original_cwd)
 
-def segment_image(image_path):
+def segment_color_based(image_path):
     """
-    Segment furniture using color-based clustering.
+    Segment furniture using color-based clustering in LAB space.
     Returns paths to PNG mask files for different color regions.
     """
     try:
@@ -88,46 +88,79 @@ def segment_image(image_path):
             mask_paths.append(mask_path)
             print(f"✅ Created {color_name} mask: RGB({r:.0f}, {g:.0f}, {b:.0f})")
 
-        print(f"✅ Generated {len(mask_paths)} color-based masks!")
+        print(f"✅ Color-based segmentation: {len(mask_paths)} masks generated")
         return mask_paths
 
     except Exception as e:
         print(f"❌ Color segmentation error: {e}")
-        return segment_image_sam2_color_guided(image_path)
+        return None
 
-def segment_image_sam2_color_guided(image_path):
+def segment_sam2_interactive(image_path, points=None, boxes=None, labels=None):
     """
-    Demo: Shows SAM2 color-guided concept (falls back to color segmentation).
+    Segment using SAM2 interactive mode with point/box prompts.
+    Returns paths to PNG mask files based on user prompts.
+
+    Args:
+        image_path: Path to input image
+        points: List of [x,y] coordinates for point prompts
+        boxes: List of [x1,y1,x2,y2] coordinates for box prompts
+        labels: List of labels (1=foreground, 0=background) for points
     """
     try:
+        # Import SAM2 predictor
+        from sam2.sam2_image_predictor import Sam2ImagePredictor
+
+        # Load SAM2 model for interactive mode
+        predictor_model = build_sam2(MODEL_CFG, CHECKPOINT_PATH, device=device)
+        predictor = Sam2ImagePredictor(predictor_model)
+
+        # Load image
         image = Image.open(image_path).convert("RGB")
         image_array = np.array(image)
 
-        lab_image = color.rgb2lab(image_array)
-        pixels = lab_image.reshape(-1, 3)
+        # Set image in predictor
+        predictor.set_image(image_array)
 
-        kmeans = KMeans(n_clusters=3, random_state=42, n_init=10)
-        kmeans.fit(pixels)
+        # Prepare prompts
+        point_coords = np.array(points) if points else None
+        box_coords = np.array(boxes) if boxes else None
+        point_labels = np.array(labels) if labels else None
 
-        centers = kmeans.cluster_centers_
+        # Generate masks
+        masks, scores, logits = predictor.predict(
+            point_coords=point_coords,
+            point_labels=point_labels,
+            box=box_coords,
+            multimask_output=True
+        )
 
-        print("🎨 Found color regions:")
-        for i, center in enumerate(centers):
-            rgb_center = color.lab2rgb(center.reshape(1, 1, 3)).reshape(3) * 255
-            r, g, b = rgb_center
-            if not (r > WHITE_THRESHOLD and g > WHITE_THRESHOLD and b > WHITE_THRESHOLD):
-                print(f"   Color {i+1}: RGB({r:.0f}, {g:.0f}, {b:.0f})")
+        # Convert to mask images
+        mask_paths = []
+        base_name = os.path.splitext(os.path.basename(image_path))[0]
 
-        print("💡 SAM2 would need SAM2ImagePredictor + point prompts for color guidance")
-        return segment_image(image_path)
+        for i in range(masks.shape[0]):
+            mask = masks[i].astype(np.uint8) * 255
+            mask_image = Image.fromarray(mask)
+
+            mask_filename = f"{base_name}_interactive_mask_{i+1}.png"
+            mask_path = os.path.join(TEMP_DIR, mask_filename)
+            mask_image.save(mask_path)
+
+            mask_paths.append(mask_path)
+            confidence = scores[i]
+            print(f"✅ Interactive mask {i+1}: confidence={confidence:.3f}")
+
+        print(f"✅ SAM2 interactive segmentation: {len(mask_paths)} masks generated")
+        return mask_paths
 
     except Exception as e:
-        print(f"❌ Demo error: {e}")
-        return segment_image(image_path)
+        print(f"❌ SAM2 interactive error: {e}")
+        return None
 
-def segment_image_sam2(image_path):
+def segment_sam2_auto(image_path):
     """
     Segment using SAM2 automatic mask generation.
+    Returns paths to PNG mask files for detected regions.
     """
     try:
         image = Image.open(image_path).convert("RGB")
@@ -138,7 +171,7 @@ def segment_image_sam2(image_path):
             return None
 
         masks_data = sorted(masks_data, key=lambda x: x['area'], reverse=True)
-        top_masks = masks_data
+        top_masks = masks_data[:10]  # Limit to top 10 masks
 
         mask_paths = []
         base_name = os.path.splitext(os.path.basename(image_path))[0]
@@ -147,18 +180,18 @@ def segment_image_sam2(image_path):
             mask = mask_data['segmentation']
             mask_image = Image.fromarray((mask * 255).astype(np.uint8))
 
-            mask_filename = f"{base_name}_mask_{i+1}.png"
+            mask_filename = f"{base_name}_sam2_mask_{i+1}.png"
             mask_path = os.path.join(TEMP_DIR, mask_filename)
             mask_image.save(mask_path)
 
             mask_paths.append(mask_path)
             area = mask_data['area']
             stability = mask_data['stability_score']
-            print(f"✅ Segment {i+1}: area={area}, stability={stability:.3f}")
+            print(f"✅ SAM2 Segment {i+1}: area={area}, stability={stability:.3f}")
 
-        print(f"✅ Generated {len(mask_paths)} SAM2 masks!")
+        print(f"✅ SAM2 automatic segmentation: {len(mask_paths)} masks generated")
         return mask_paths
 
     except Exception as e:
-        print(f"❌ SAM2 error: {e}")
+        print(f"❌ SAM2 auto error: {e}")
         return None
