@@ -171,7 +171,8 @@ def segment_sam2_auto(image_path):
             return None
 
         masks_data = sorted(masks_data, key=lambda x: x['area'], reverse=True)
-        top_masks = masks_data[:10]  # Limit to top 10 masks
+        # top_masks = masks_data[:10]  # Limit to top 10 masks
+        top_masks = masks_data
 
         mask_paths = []
         base_name = os.path.splitext(os.path.basename(image_path))[0]

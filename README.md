@@ -4,7 +4,7 @@ A FastAPI backend service that uses SAM2 (Segment Anything Model 2) to segment f
 
 ## Features
 
-- � **Multiple Segmentation Strategies:**
+- ⚙️ **Multiple Segmentation Strategies:**
   - **Color-Based**: Fast clustering for simple furniture (primary method)
   - **SAM2 Automatic**: Detailed AI-powered segmentation (fallback)
   - **SAM2 Interactive**: Precise user-guided segmentation (precision control)
