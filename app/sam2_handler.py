@@ -5,7 +5,12 @@ import numpy as np
 from PIL import Image
 from sklearn.cluster import KMeans
 from scipy import ndimage
+from skimage import color
 from .config import SAM2_DIR, CHECKPOINT_PATH, MODEL_CFG, SAM2_POINTS_PER_SIDE, SAM2_PRED_IOU_THRESH, SAM2_STABILITY_SCORE_THRESH, SAM2_CROP_N_LAYERS, SAM2_CROP_N_POINTS_DOWNSCALE, SAM2_MIN_MASK_REGION_AREA, TEMP_DIR
+
+# Constants for image processing
+BINARY_THRESHOLD = 127
+WHITE_THRESHOLD = 240
 
 # Add SAM2 to Python path
 sys.path.insert(0, SAM2_DIR)
@@ -46,7 +51,6 @@ def segment_image(image_path):
         height, width = image_array.shape[:2]
 
         # Convert to LAB color space for better color clustering
-        from skimage import color
         lab_image = color.rgb2lab(image_array)
         pixels = lab_image.reshape(-1, 3)
 
@@ -66,15 +70,15 @@ def segment_image(image_path):
             r, g, b = rgb_center
 
             # Skip white background
-            if r > 240 and g > 240 and b > 240:
+            if r > WHITE_THRESHOLD and g > WHITE_THRESHOLD and b > WHITE_THRESHOLD:
                 continue
 
             color_name = f"color_{i+1}"
             mask = (label_image == i).astype(np.uint8) * 255
 
             # Minimal morphological cleaning
-            mask = ndimage.binary_opening(mask > 127, structure=np.ones((2,2))).astype(np.uint8) * 255
-            mask = ndimage.binary_closing(mask > 127, structure=np.ones((2,2))).astype(np.uint8) * 255
+            mask = ndimage.binary_opening(mask > BINARY_THRESHOLD, structure=np.ones((2,2))).astype(np.uint8) * 255
+            mask = ndimage.binary_closing(mask > BINARY_THRESHOLD, structure=np.ones((2,2))).astype(np.uint8) * 255
 
             mask_image = Image.fromarray(mask)
             mask_filename = f"{base_name}_{color_name}_mask.png"
@@ -99,7 +103,6 @@ def segment_image_sam2_color_guided(image_path):
         image = Image.open(image_path).convert("RGB")
         image_array = np.array(image)
 
-        from skimage import color
         lab_image = color.rgb2lab(image_array)
         pixels = lab_image.reshape(-1, 3)
 
@@ -112,7 +115,7 @@ def segment_image_sam2_color_guided(image_path):
         for i, center in enumerate(centers):
             rgb_center = color.lab2rgb(center.reshape(1, 1, 3)).reshape(3) * 255
             r, g, b = rgb_center
-            if not (r > 240 and g > 240 and b > 240):
+            if not (r > WHITE_THRESHOLD and g > WHITE_THRESHOLD and b > WHITE_THRESHOLD):
                 print(f"   Color {i+1}: RGB({r:.0f}, {g:.0f}, {b:.0f})")
 
         print("💡 SAM2 would need SAM2ImagePredictor + point prompts for color guidance")
