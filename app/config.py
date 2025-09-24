@@ -22,12 +22,12 @@ if MODEL_SIZE == "base_plus":
     MODEL_CFG = "configs/sam2.1/sam2.1_hiera_b+.yaml"
 
 # SAM2 Mask Generator Parameters
-SAM2_POINTS_PER_SIDE = int(os.getenv("SAM2_POINTS_PER_SIDE", "32"))
-SAM2_PRED_IOU_THRESH = float(os.getenv("SAM2_PRED_IOU_THRESH", "0.8"))
-SAM2_STABILITY_SCORE_THRESH = float(os.getenv("SAM2_STABILITY_SCORE_THRESH", "0.8"))
+SAM2_POINTS_PER_SIDE = int(os.getenv("SAM2_POINTS_PER_SIDE", "16"))
+SAM2_PRED_IOU_THRESH = float(os.getenv("SAM2_PRED_IOU_THRESH", "0.95"))
+SAM2_STABILITY_SCORE_THRESH = float(os.getenv("SAM2_STABILITY_SCORE_THRESH", "0.9"))
 SAM2_CROP_N_LAYERS = int(os.getenv("SAM2_CROP_N_LAYERS", "1"))
 SAM2_CROP_N_POINTS_DOWNSCALE = int(os.getenv("SAM2_CROP_N_POINTS_DOWNSCALE", "2"))
-SAM2_MIN_MASK_REGION_AREA = int(os.getenv("SAM2_MIN_MASK_REGION_AREA", "500"))
+SAM2_MIN_MASK_REGION_AREA = int(os.getenv("SAM2_MIN_MASK_REGION_AREA", "5000"))
 
 # Application settings
 TEMP_DIR = os.path.join(BASE_DIR, "temp")
