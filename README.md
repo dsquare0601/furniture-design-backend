@@ -16,13 +16,6 @@ A FastAPI backend service that uses SAM2 (Segment Anything Model 2) to segment f
 
 ## API Endpoints
 
-### POST `/segment` (Legacy)
-Upload a furniture image and get masks using color-based segmentation.
-
-**Request:**
-- Multipart form data with `file` field
-- Supported formats: PNG, JPG, JPEG
-
 ### POST `/segment/color`
 **Color-Based Segmentation** - Fast and reliable for most furniture images.
 
@@ -163,7 +156,7 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000
 
 ```bash
 # Upload an image and get segmentation masks
-curl -X POST "http://localhost:8000/segment" \
+curl -X POST "http://localhost:8000/segment/color" \
   -F "file=@furniture_image.jpg" | jq
 
 # Download a specific mask
