@@ -21,45 +21,6 @@ class InteractivePrompts(BaseModel):
     boxes: list[list[int]] | None = None
     labels: list[int] | None = None
 
-@app.post("/segment")
-async def segment(file: UploadFile = File(...)):
-    """
-    Legacy endpoint - uses color-based segmentation.
-    Accepts an image file via multipart upload, segments the furniture using color clustering,
-    and returns paths to multiple mask images for different furniture parts.
-    """
-    if not file.filename.lower().endswith(('.png', '.jpg', '.jpeg')):
-        raise HTTPException(status_code=400, detail="Invalid file type. Only PNG, JPG, JPEG allowed.")
-    
-    # Ensure temp directory exists
-    os.makedirs(TEMP_DIR, exist_ok=True)
-    
-    # Save uploaded image temporarily
-    temp_image_path = os.path.join(TEMP_DIR, file.filename)
-    with open(temp_image_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
-    
-    # Perform segmentation using color-based method
-    mask_paths = segment_color_based(temp_image_path)
-    
-    if mask_paths:
-        # Return JSON with all mask file paths
-        return JSONResponse({
-            "success": True,
-            "strategy": "color-based",
-            "message": f"Generated {len(mask_paths)} furniture part masks using color clustering",
-            "masks": [
-                {
-                    "id": i+1,
-                    "filename": os.path.basename(path),
-                    "path": path,
-                    "download_url": f"/download/{os.path.basename(path)}"
-                } for i, path in enumerate(mask_paths)
-            ]
-        })
-    else:
-        raise HTTPException(status_code=500, detail="Segmentation failed. No masks generated.")
-
 @app.post("/segment/color")
 async def segment_color(file: UploadFile = File(...)):
     """
